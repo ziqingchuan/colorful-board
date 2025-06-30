@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mini调色板</title>
+    <script src="https://cdn.tailwindcss.com/3.3.3"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="shortcut icon" href="调色板.svg" type="image/x-icon"/>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .color-picker {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 40px;
+            background: transparent;
+            cursor: pointer;
+        }
+        .color-picker::-webkit-color-swatch {
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+        }
+        .color-picker::-moz-color-swatch {
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+        }
+        .gradient-preview {
+            height: 120px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        .gradient-preview:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .code-block {
+            font-family: 'Fira Code', monospace;
+            background-color: #1e293b;
+            color: #f8fafc;
+            border-radius: 8px;
+            padding: 12px;
+            position: relative;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background-color: #334155;
+            color: #f8fafc;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .copy-btn:hover {
+            background-color: #475569;
+        }
+        .color-card {
+            transition: all 0.3s ease;
+        }
+        .color-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+<div class="container mx-auto px-4 py-12">
+    <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-12">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">前端开发取色板工具</h1>
+            <p class="text-lg text-gray-600">轻松获取颜色代码和CSS渐变方案</p>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
+            <div class="flex border-b border-gray-200">
+                <button class="tab-btn py-4 px-6 font-medium text-gray-700 border-b-2 border-transparent hover:text-indigo-600 transition-colors active" data-tab="single-color">单色取色</button>
+                <button class="tab-btn py-4 px-6 font-medium text-gray-700 border-b-2 border-transparent hover:text-indigo-600 transition-colors" data-tab="gradient">渐变色方案</button>
+            </div>
+
+            <div class="p-6">
+                <!-- 单色取色面板 -->
+                <div id="single-color" class="tab-content active">
+                    <div class="mb-6">
+                        <label for="color-picker" class="block text-sm font-medium text-gray-700 mb-2">选择颜色</label>
+                        <input type="color" id="color-picker" class="color-picker" value="#3b82f6">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="color-card bg-white p-4 rounded-lg shadow-sm">
+                            <div class="w-full h-24 rounded-lg mb-3" id="color-preview" style="background-color: #3b82f6;"></div>
+                            <div class="space-y-2">
+                                <div>
+                                    <span class="text-xs text-gray-500">HEX</span>
+                                    <div class="flex items-center">
+                                        <input type="text" id="hex-value" class="w-full px-3 py-2 border border-gray-200 rounded-md text-sm" value="#3b82f6" readonly>
+                                        <button class="copy-hex ml-2 px-3 py-2 bg-gray-100 rounded-md text-sm hover:bg-gray-200 transition-colors">
+                                            <i class="far fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span class="text-xs text-gray-500">RGB</span>
+                                    <div class="flex items-center">
+                                        <input type="text" id="rgb-value" class="w-full px-3 py-2 border border-gray-200 rounded-md text-sm" value="rgb(59, 130, 246)" readonly>
+                                        <button class="copy-rgb ml-2 px-3 py-2 bg-gray-100 rounded-md text-sm hover:bg-gray-200 transition-colors">
+                                            <i class="far fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span class="text-xs text-gray-500">HSL</span>
+                                    <div class="flex items-center">
+                                        <input type="text" id="hsl-value" class="w-full px-3 py-2 border border-gray-200 rounded-md text-sm" value="hsl(217, 92%, 60%)" readonly>
+                                        <button class="copy-hsl ml-2 px-3 py-2 bg-gray-100 rounded-md text-sm hover:bg-gray-200 transition-colors">
+                                            <i class="far fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="color-card bg-white p-4 rounded-lg shadow-sm">
+                            <h3 class="font-medium text-gray-700 mb-3">明度变化</h3>
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded mr-2" id="light-100"></div>
+                                    <input type="text" class="flex-1 px-2 py-1 text-xs border border-gray-200 rounded" value="#3b82f6" readonly>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded mr-2" id="light-200"></div>
+                                    <input type="text" class="flex-1 px-2 py-1 text-xs border border-gray-200 rounded" value="#60a5fa" readonly>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded mr-2" id="light-300"></div>
+                                    <input type="text" class="flex-1 px-2 py-1 text-xs border border-gray-200 rounded" value="#93c5fd" readonly>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded mr-2" id="light-400"></div>
+                                    <input type="text" class="flex-1 px-2 py-1 text-xs border border-gray-200 rounded" value="#bfdbfe" readonly>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded mr-2" id="light-500"></div>
+                                    <input type="text" class="flex-1 px-2 py-1 text-xs border border-gray-200 rounded" value="#dbeafe" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="color-card bg-white p-4 rounded-lg shadow-sm">
+                            <h3 class="font-medium text-gray-700 mb-3">暗度变化</h3>
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded mr-2" id="dark-100"></div>
+                                    <input type="text" class="flex-1 px-2 py-1 text-xs border border-gray-200 rounded" value="#2563eb" readonly>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded mr-2" id="dark-200"></div>
+                                    <input type="text" class="flex-1 px-2 py-1 text-xs border border-gray-200 rounded" value="#1d4ed8" readonly>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded mr-2" id="dark-300"></div>
+                                    <input type="text" class="flex-1 px-2 py-1 text-xs border border-gray-200 rounded" value="#1e40af" readonly>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded mr-2" id="dark-400"></div>
+                                    <input type="text" class="flex-1 px-2 py-1 text-xs border border-gray-200 rounded" value="#1e3a8a" readonly>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded mr-2" id="dark-500"></div>
+                                    <input type="text" class="flex-1 px-2 py-1 text-xs border border-gray-200 rounded" value="#172554" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 渐变色面板 -->
+                <div id="gradient" class="tab-content">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="gradient-color-1" class="block text-sm font-medium text-gray-700 mb-2">颜色1</label>
+                            <input type="color" id="gradient-color-1" class="color-picker" value="#3b82f6">
+                        </div>
+                        <div>
+                            <label for="gradient-color-2" class="block text-sm font-medium text-gray-700 mb-2">颜色2</label>
+                            <input type="color" id="gradient-color-2" class="color-picker" value="#ec4899">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div>
+                            <div class="gradient-preview mb-3" id="linear-gradient-preview" style="background: linear-gradient(90deg, #3b82f6, #ec4899);"></div>
+                            <div class="code-block">
+                                <button class="copy-btn" data-target="linear-gradient-code">
+                                    <i class="far fa-copy"></i>
+                                </button>
+                                <code id="linear-gradient-code">background: linear-gradient(90deg, #3b82f6, #ec4899);</code>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="gradient-preview mb-3" id="radial-gradient-preview" style="background: radial-gradient(circle, #3b82f6, #ec4899);"></div>
+                            <div class="code-block">
+                                <button class="copy-btn" data-target="radial-gradient-code">
+                                    <i class="far fa-copy"></i>
+                                </button>
+                                <code id="radial-gradient-code">background: radial-gradient(circle, #3b82f6, #ec4899);</code>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="gradient-preview mb-3" id="conic-gradient-preview" style="background: conic-gradient(#3b82f6, #ec4899);"></div>
+                            <div class="code-block">
+                                <button class="copy-btn" data-target="conic-gradient-code">
+                                    <i class="far fa-copy"></i>
+                                </button>
+                                <code id="conic-gradient-code">background: conic-gradient(#3b82f6, #ec4899);</code>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">线性渐变方向</label>
+                            <select id="gradient-direction" class="w-full px-3 py-2 border border-gray-200 rounded-md text-sm">
+                                <option value="90deg">水平 (→)</option>
+                                <option value="180deg">垂直 (↓)</option>
+                                <option value="45deg">对角线 (↗)</option>
+                                <option value="135deg">对角线 (↘)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">常用配色方案</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="p-4 rounded-lg border border-gray-100">
+                    <div class="flex mb-2">
+                        <div class="w-1/5 h-8 rounded-l" style="background-color: #6366f1;"></div>
+                        <div class="w-1/5 h-8" style="background-color: #8b5cf6;"></div>
+                        <div class="w-1/5 h-8" style="background-color: #ec4899;"></div>
+                        <div class="w-1/5 h-8" style="background-color: #f43f5e;"></div>
+                        <div class="w-1/5 h-8 rounded-r" style="background-color: #f97316;"></div>
+                    </div>
+                    <div class="text-sm text-gray-600">紫色系渐变</div>
+                    <div class="code-block mt-2 text-xs">
+                        <button class="copy-btn" data-target="palette-1-code">
+                            <i class="far fa-copy"></i>
+                        </button>
+                        <code id="palette-1-code">background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899, #f43f5e, #f97316);</code>
+                    </div>
+                </div>
+                <div class="p-4 rounded-lg border border-gray-100">
+                    <div class="flex mb-2">
+                        <div class="w-1/5 h-8 rounded-l" style="background-color: #06b6d4;"></div>
+                        <div class="w-1/5 h-8" style="background-color: #0ea5e9;"></div>
+                        <div class="w-1/5 h-8" style="background-color: #3b82f6;"></div>
+                        <div class="w-1/5 h-8" style="background-color: #6366f1;"></div>
+                        <div class="w-1/5 h-8 rounded-r" style="background-color: #8b5cf6;"></div>
+                    </div>
+                    <div class="text-sm text-gray-600">蓝色系渐变</div>
+                    <div class="code-block mt-2 text-xs">
+                        <button class="copy-btn" data-target="palette-2-code">
+                            <i class="far fa-copy"></i>
+                        </button>
+                        <code id="palette-2-code">background: linear-gradient(90deg, #06b6d4, #0ea5e9, #3b82f6, #6366f1, #8b5cf6);</code>
+                    </div>
+                </div>
+                <div class="p-4 rounded-lg border border-gray-100">
+                    <div class="flex mb-2">
+                        <div class="w-1/5 h-8 rounded-l" style="background-color: #10b981;"></div>
+                        <div class="w-1/5 h-8" style="background-color: #22c55e;"></div>
+                        <div class="w-1/5 h-8" style="background-color: #84cc16;"></div>
+                        <div class="w-1/5 h-8" style="background-color: #eab308;"></div>
+                        <div class="w-1/5 h-8 rounded-r" style="background-color: #f97316;"></div>
+                    </div>
+                    <div class="text-sm text-gray-600">自然系渐变</div>
+                    <div class="code-block mt-2 text-xs">
+                        <button class="copy-btn" data-target="palette-3-code">
+                            <i class="far fa-copy"></i>
+                        </button>
+                        <code id="palette-3-code">background: linear-gradient(90deg, #10b981, #22c55e, #84cc16, #eab308, #f97316);</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="bg-gray-50 py-6">
+    <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
+        <p>created by <a href="https://space.coze.cn" class="text-indigo-600 hover:text-indigo-800">coze space</a></p>
+        <p>页面内容均由 AI 生成，仅供参考</p>
+    </div>
+</footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 标签切换功能
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+
+                // 移除所有标签和内容的active类
+                document.querySelectorAll('.tab-btn').forEach(tb => tb.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+
+                // 添加active类到当前标签和内容
+                this.classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // 颜色选择器功能
+        const colorPicker = document.getElementById('color-picker');
+        const colorPreview = document.getElementById('color-preview');
+        const hexValue = document.getElementById('hex-value');
+        const rgbValue = document.getElementById('rgb-value');
+        const hslValue = document.getElementById('hsl-value');
+
+        function updateColorValues(color) {
+            colorPreview.style.backgroundColor = color;
+            hexValue.value = color;
+
+            // 转换HEX为RGB
+            const r = parseInt(color.substr(1, 2), 16);
+            const g = parseInt(color.substr(3, 2), 16);
+            const b = parseInt(color.substr(5, 2), 16);
+            rgbValue.value = `rgb(${r}, ${g}, ${b})`;
+
+            // 转换HEX为HSL
+            const hsl = rgbToHsl(r, g, b);
+            hslValue.value = `hsl(${Math.round(hsl[0])}, ${Math.round(hsl[1])}%, ${Math.round(hsl[2])}%)`;
+
+            // 更新明暗变化
+            updateColorVariations(color);
+        }
+
+        function rgbToHsl(r, g, b) {
+            r /= 255, g /= 255, b /= 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+
+            if (max === min) {
+                h = s = 0; // achromatic
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h *= 60;
+            }
+
+            return [h, s * 100, l * 100];
+        }
+
+        function updateColorVariations(baseColor) {
+            // 明度变化
+            for (let i = 1; i <= 5; i++) {
+                const lightColor = lightenColor(baseColor, i * 0.15);
+                document.getElementById(`light-${i}00`).style.backgroundColor = lightColor;
+                document.getElementById(`light-${i}00`).nextElementSibling.value = lightColor;
+            }
+
+            // 暗度变化
+            for (let i = 1; i <= 5; i++) {
+                const darkColor = darkenColor(baseColor, i * 0.15);
+                document.getElementById(`dark-${i}00`).style.backgroundColor = darkColor;
+                document.getElementById(`dark-${i}00`).nextElementSibling.value = darkColor;
+            }
+        }
+
+        function lightenColor(color, amount) {
+            const num = parseInt(color.replace("#", ""), 16);
+            const amt = Math.round(2.55 * amount * 100);
+            const R = Math.min(255, (num >> 16) + amt);
+            const G = Math.min(255, ((num >> 8) & 0x00FF) + amt);
+            const B = Math.min(255, (num & 0x0000FF) + amt);
+            return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
+        }
+
+        function darkenColor(color, amount) {
+            const num = parseInt(color.replace("#", ""), 16);
+            const amt = Math.round(2.55 * amount * 100);
+            const R = Math.max(0, (num >> 16) - amt);
+            const G = Math.max(0, ((num >> 8) & 0x00FF) - amt);
+            const B = Math.max(0, (num & 0x0000FF) - amt);
+            return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
+        }
+
+        colorPicker.addEventListener('input', function() {
+            updateColorValues(this.value);
+        });
+
+        // 初始化颜色
+        updateColorValues(colorPicker.value);
+
+        // 渐变色功能
+        const gradientColor1 = document.getElementById('gradient-color-1');
+        const gradientColor2 = document.getElementById('gradient-color-2');
+        const gradientDirection = document.getElementById('gradient-direction');
+        const gradientType = document.getElementById('gradient-type');
+        const linearGradientPreview = document.getElementById('linear-gradient-preview');
+        const radialGradientPreview = document.getElementById('radial-gradient-preview');
+        const conicGradientPreview = document.getElementById('conic-gradient-preview');
+        const linearGradientCode = document.getElementById('linear-gradient-code');
+        const radialGradientCode = document.getElementById('radial-gradient-code');
+        const conicGradientCode = document.getElementById('conic-gradient-code');
+
+        function updateGradients() {
+            const color1 = gradientColor1.value;
+            const color2 = gradientColor2.value;
+            const direction = gradientDirection.value;
+
+            // 更新预览
+            linearGradientPreview.style.background = `linear-gradient(${direction}, ${color1}, ${color2})`;
+            radialGradientPreview.style.background = `radial-gradient(circle, ${color1}, ${color2})`;
+            conicGradientPreview.style.background = `conic-gradient(${color1}, ${color2})`;
+
+            // 更新代码
+            linearGradientCode.textContent = `background: linear-gradient(${direction}, ${color1}, ${color2});`;
+            radialGradientCode.textContent = `background: radial-gradient(circle, ${color1}, ${color2});`;
+            conicGradientCode.textContent = `background: conic-gradient(${color1}, ${color2});`;
+        }
+
+        gradientColor1.addEventListener('input', updateGradients);
+        gradientColor2.addEventListener('input', updateGradients);
+        gradientDirection.addEventListener('change', updateGradients);
+        gradientType.addEventListener('change', function() {
+            // 这里可以添加切换渐变类型的逻辑
+        });
+
+        // 初始化渐变
+        updateGradients();
+
+        // 复制功能
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const textToCopy = document.getElementById(targetId).textContent;
+
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-check"></i>';
+                    setTimeout(() => {
+                        this.innerHTML = originalText;
+                    }, 2000);
+                });
+            });
+        });
+
+        // 复制单色代码
+        document.querySelectorAll('.copy-hex, .copy-rgb, .copy-hsl').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const textToCopy = this.previousElementSibling.value;
+
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-check"></i>';
+                    setTimeout(() => {
+                        this.innerHTML = originalText;
+                    }, 2000);
+                });
+            });
+        });
+    });
+</script>
+</body>
+</html>
+</html>
