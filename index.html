@@ -7,27 +7,12 @@
     <script src="https://cdn.tailwindcss.com/3.3.3"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="shortcut icon" href="调色板.svg" type="image/x-icon"/>
+    <!-- 添加Pickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css">
     <style>
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f8fafc;
-        }
-        .color-picker {
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            width: 100%;
-            height: 40px;
-            background: transparent;
-            cursor: pointer;
-        }
-        .color-picker::-webkit-color-swatch {
-            border-radius: 8px;
-            border: 2px solid #e2e8f0;
-        }
-        .color-picker::-moz-color-swatch {
-            border-radius: 8px;
-            border: 2px solid #e2e8f0;
         }
         .gradient-preview {
             height: 120px;
@@ -79,6 +64,24 @@
             from { opacity: 0; }
             to { opacity: 1; }
         }
+        /* Pickr容器样式 */
+        .pickr-container {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+        .pickr .pcr-button {
+            width: 100% !important;
+            height: 40px !important;
+            border-radius: 8px !important;
+            border: 2px solid #e2e8f0 !important;
+        }
+        /* 颜色预览方块 */
+        .color-preview {
+            width: 100%;
+            height: 24px;
+            border-radius: 4px;
+            margin-top: 8px;
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -99,8 +102,10 @@
                 <!-- 单色取色面板 -->
                 <div id="single-color" class="tab-content active">
                     <div class="mb-6">
-                        <label for="color-picker" class="block text-sm font-medium text-gray-700 mb-2">选择颜色</label>
-                        <input type="color" id="color-picker" class="color-picker" value="#3b82f6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">选择颜色</label>
+                        <div id="single-color-picker-container" class="pickr-container">
+                            <!-- Pickr将在这里初始化 -->
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -195,12 +200,16 @@
                 <div id="gradient" class="tab-content">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
-                            <label for="gradient-color-1" class="block text-sm font-medium text-gray-700 mb-2">颜色1</label>
-                            <input type="color" id="gradient-color-1" class="color-picker" value="#3b82f6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">颜色1</label>
+                            <div id="gradient-color-1-container" class="pickr-container">
+                                <!-- Pickr将在这里初始化 -->
+                            </div>
                         </div>
                         <div>
-                            <label for="gradient-color-2" class="block text-sm font-medium text-gray-700 mb-2">颜色2</label>
-                            <input type="color" id="gradient-color-2" class="color-picker" value="#ec4899">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">颜色2</label>
+                            <div id="gradient-color-2-container" class="pickr-container">
+                                <!-- Pickr将在这里初始化 -->
+                            </div>
                         </div>
                     </div>
 
@@ -305,6 +314,8 @@
     </div>
 </div>
 
+<!-- 添加Pickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // 标签切换功能
@@ -323,31 +334,7 @@
             });
         });
 
-        // 颜色选择器功能
-        const colorPicker = document.getElementById('color-picker');
-        const colorPreview = document.getElementById('color-preview');
-        const hexValue = document.getElementById('hex-value');
-        const rgbValue = document.getElementById('rgb-value');
-        const hslValue = document.getElementById('hsl-value');
-
-        function updateColorValues(color) {
-            colorPreview.style.backgroundColor = color;
-            hexValue.value = color;
-
-            // 转换HEX为RGB
-            const r = parseInt(color.substr(1, 2), 16);
-            const g = parseInt(color.substr(3, 2), 16);
-            const b = parseInt(color.substr(5, 2), 16);
-            rgbValue.value = `rgb(${r}, ${g}, ${b})`;
-
-            // 转换HEX为HSL
-            const hsl = rgbToHsl(r, g, b);
-            hslValue.value = `hsl(${Math.round(hsl[0])}, ${Math.round(hsl[1])}%, ${Math.round(hsl[2])}%)`;
-
-            // 更新明暗变化
-            updateColorVariations(color);
-        }
-
+        // 颜色转换函数
         function rgbToHsl(r, g, b) {
             r /= 255, g /= 255, b /= 255;
             const max = Math.max(r, g, b), min = Math.min(r, g, b);
@@ -369,7 +356,48 @@
             return [h, s * 100, l * 100];
         }
 
+        function updateColorValues(color) {
+            const colorPreview = document.getElementById('color-preview');
+            const hexValue = document.getElementById('hex-value');
+            const rgbValue = document.getElementById('rgb-value');
+            const hslValue = document.getElementById('hsl-value');
+
+            colorPreview.style.backgroundColor = color;
+            hexValue.value = color;
+
+            // 转换HEX为RGB
+            const r = parseInt(color.substr(1, 2), 16);
+            const g = parseInt(color.substr(3, 2), 16);
+            const b = parseInt(color.substr(5, 2), 16);
+            rgbValue.value = `rgb(${r}, ${g}, ${b})`;
+
+            // 转换HEX为HSL
+            const hsl = rgbToHsl(r, g, b);
+            hslValue.value = `hsl(${Math.round(hsl[0])}, ${Math.round(hsl[1])}%, ${Math.round(hsl[2])}%)`;
+
+            // 更新明暗变化
+            updateColorVariations(color);
+        }
+
         function updateColorVariations(baseColor) {
+            function lightenColor(color, amount) {
+                const num = parseInt(color.replace("#", ""), 16);
+                const amt = Math.round(2.55 * amount * 100);
+                const R = Math.min(255, (num >> 16) + amt);
+                const G = Math.min(255, ((num >> 8) & 0x00FF) + amt);
+                const B = Math.min(255, (num & 0x0000FF) + amt);
+                return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
+            }
+
+            function darkenColor(color, amount) {
+                const num = parseInt(color.replace("#", ""), 16);
+                const amt = Math.round(2.55 * amount * 100);
+                const R = Math.max(0, (num >> 16) - amt);
+                const G = Math.max(0, ((num >> 8) & 0x00FF) - amt);
+                const B = Math.max(0, (num & 0x0000FF) - amt);
+                return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
+            }
+
             // 明度变化
             for (let i = 1; i <= 5; i++) {
                 const lightColor = lightenColor(baseColor, i * 0.15);
@@ -385,36 +413,100 @@
             }
         }
 
-        function lightenColor(color, amount) {
-            const num = parseInt(color.replace("#", ""), 16);
-            const amt = Math.round(2.55 * amount * 100);
-            const R = Math.min(255, (num >> 16) + amt);
-            const G = Math.min(255, ((num >> 8) & 0x00FF) + amt);
-            const B = Math.min(255, (num & 0x0000FF) + amt);
-            return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
-        }
-
-        function darkenColor(color, amount) {
-            const num = parseInt(color.replace("#", ""), 16);
-            const amt = Math.round(2.55 * amount * 100);
-            const R = Math.max(0, (num >> 16) - amt);
-            const G = Math.max(0, ((num >> 8) & 0x00FF) - amt);
-            const B = Math.max(0, (num & 0x0000FF) - amt);
-            return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
-        }
-
-        colorPicker.addEventListener('input', function() {
-            updateColorValues(this.value);
+        // 初始化Pickr颜色选择器
+        const singleColorPickr = Pickr.create({
+            el: '#single-color-picker-container',
+            theme: 'classic',
+            default: '#3b82f6',
+            swatches: [
+                '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#6366f1',
+                '#ec4899', '#14b8a6', '#f97316', '#8b5cf6', '#d946ef'
+            ],
+            components: {
+                preview: true,
+                opacity: true,
+                hue: true,
+                interaction: {
+                    hex: true,
+                    rgba: true,
+                    hsla: true,
+                    input: true,
+                    save: true
+                }
+            }
         });
 
-        // 初始化颜色
-        updateColorValues(colorPicker.value);
+        // 修复：确保Pickr按钮颜色更新
+        singleColorPickr.on('change', (color, source, instance) => {
+            const hexColor = color.toHEXA().toString();
+            updateColorValues(hexColor);
+
+            // 手动更新按钮颜色
+            instance._root.button.style.color = hexColor;
+        }).on('save', (color, instance) => {
+            // 保存时也更新按钮颜色
+            const hexColor = color.toHEXA().toString();
+            instance._root.button.style.color = hexColor;
+        });
+
+        // 初始化渐变颜色选择器
+        const gradientColor1Pickr = Pickr.create({
+            el: '#gradient-color-1-container',
+            theme: 'classic',
+            default: '#3b82f6',
+            components: {
+                preview: true,
+                opacity: true,
+                hue: true,
+                interaction: {
+                    hex: true,
+                    rgba: true,
+                    hsla: true,
+                    input: true,
+                    save: true
+                }
+            }
+        });
+
+        const gradientColor2Pickr = Pickr.create({
+            el: '#gradient-color-2-container',
+            theme: 'classic',
+            default: '#ec4899',
+            components: {
+                preview: true,
+                opacity: true,
+                hue: true,
+                interaction: {
+                    hex: true,
+                    rgba: true,
+                    hsla: true,
+                    input: true,
+                    save: true
+                }
+            }
+        });
+
+        // 修复：确保渐变Pickr按钮颜色更新
+        gradientColor1Pickr.on('change', (color, source, instance) => {
+            const hexColor = color.toHEXA().toString();
+            instance._root.button.style.color = hexColor;
+            updateGradients();
+        }).on('save', (color, instance) => {
+            const hexColor = color.toHEXA().toString();
+            instance._root.button.style.color = hexColor;
+        });
+
+        gradientColor2Pickr.on('change', (color, source, instance) => {
+            const hexColor = color.toHEXA().toString();
+            instance._root.button.style.color = hexColor;
+            updateGradients();
+        }).on('save', (color, instance) => {
+            const hexColor = color.toHEXA().toString();
+            instance._root.button.style.color = hexColor;
+        });
 
         // 渐变色功能
-        const gradientColor1 = document.getElementById('gradient-color-1');
-        const gradientColor2 = document.getElementById('gradient-color-2');
         const gradientDirection = document.getElementById('gradient-direction');
-        const gradientType = document.getElementById('gradient-type');
         const linearGradientPreview = document.getElementById('linear-gradient-preview');
         const radialGradientPreview = document.getElementById('radial-gradient-preview');
         const conicGradientPreview = document.getElementById('conic-gradient-preview');
@@ -423,8 +515,8 @@
         const conicGradientCode = document.getElementById('conic-gradient-code');
 
         function updateGradients() {
-            const color1 = gradientColor1.value;
-            const color2 = gradientColor2.value;
+            const color1 = gradientColor1Pickr.getColor().toHEXA().toString();
+            const color2 = gradientColor2Pickr.getColor().toHEXA().toString();
             const direction = gradientDirection.value;
 
             // 更新预览
@@ -438,12 +530,7 @@
             conicGradientCode.textContent = `background: conic-gradient(${color1}, ${color2});`;
         }
 
-        gradientColor1.addEventListener('input', updateGradients);
-        gradientColor2.addEventListener('input', updateGradients);
         gradientDirection.addEventListener('change', updateGradients);
-        gradientType.addEventListener('change', function() {
-            // 这里可以添加切换渐变类型的逻辑
-        });
 
         // 初始化渐变
         updateGradients();
@@ -478,6 +565,9 @@
                 });
             });
         });
+
+        // 初始化颜色值
+        updateColorValues('#3b82f6');
     });
 </script>
 </body>
