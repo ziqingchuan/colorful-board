@@ -110,7 +110,7 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div class="color-card bg-white p-4 rounded-lg shadow-sm">
-                            <div class="w-full h-24 rounded-lg mb-3" id="color-preview" style="background-color: #3b82f6;"></div>
+                            <div class="w-full h-24 rounded-lg mb-3" id="color-preview" style="background-color: #000000;"></div>
                             <div class="space-y-2">
                                 <div>
                                     <span class="text-xs text-gray-500">HEX</span>
@@ -215,7 +215,7 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                         <div>
-                            <div class="gradient-preview mb-3" id="linear-gradient-preview" style="background: linear-gradient(90deg, #3b82f6, #ec4899);"></div>
+                            <div class="gradient-preview mb-3" id="linear-gradient-preview" style="background: linear-gradient(90deg, #000000, #000000);"></div>
                             <div class="code-block">
                                 <button class="copy-btn" data-target="linear-gradient-code">
                                     <i class="far fa-copy"></i>
@@ -224,7 +224,7 @@
                             </div>
                         </div>
                         <div>
-                            <div class="gradient-preview mb-3" id="radial-gradient-preview" style="background: radial-gradient(circle, #3b82f6, #ec4899);"></div>
+                            <div class="gradient-preview mb-3" id="radial-gradient-preview" style="background: radial-gradient(circle, #000000, #000000);"></div>
                             <div class="code-block">
                                 <button class="copy-btn" data-target="radial-gradient-code">
                                     <i class="far fa-copy"></i>
@@ -233,7 +233,7 @@
                             </div>
                         </div>
                         <div>
-                            <div class="gradient-preview mb-3" id="conic-gradient-preview" style="background: conic-gradient(#3b82f6, #ec4899);"></div>
+                            <div class="gradient-preview mb-3" id="conic-gradient-preview" style="background: conic-gradient(#000000, #000000);"></div>
                             <div class="code-block">
                                 <button class="copy-btn" data-target="conic-gradient-code">
                                     <i class="far fa-copy"></i>
@@ -334,28 +334,7 @@
             });
         });
 
-        // 颜色转换函数
-        function rgbToHsl(r, g, b) {
-            r /= 255, g /= 255, b /= 255;
-            const max = Math.max(r, g, b), min = Math.min(r, g, b);
-            let h, s, l = (max + min) / 2;
-
-            if (max === min) {
-                h = s = 0; // achromatic
-            } else {
-                const d = max - min;
-                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-                switch (max) {
-                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                    case g: h = (b - r) / d + 2; break;
-                    case b: h = (r - g) / d + 4; break;
-                }
-                h *= 60;
-            }
-
-            return [h, s * 100, l * 100];
-        }
-
+// 更新颜色值 - 支持透明度
         function updateColorValues(color) {
             const colorPreview = document.getElementById('color-preview');
             const hexValue = document.getElementById('hex-value');
@@ -363,51 +342,95 @@
             const hslValue = document.getElementById('hsl-value');
 
             colorPreview.style.backgroundColor = color;
-            hexValue.value = color;
 
-            // 转换HEX为RGB
-            const r = parseInt(color.substr(1, 2), 16);
-            const g = parseInt(color.substr(3, 2), 16);
-            const b = parseInt(color.substr(5, 2), 16);
-            rgbValue.value = `rgb(${r}, ${g}, ${b})`;
+            // 获取颜色对象
+            const pickrColor = singleColorPickr.getColor();
+            const rgba = pickrColor.toRGBA();
+            const hsla = pickrColor.toHSLA();
 
-            // 转换HEX为HSL
-            const hsl = rgbToHsl(r, g, b);
-            hslValue.value = `hsl(${Math.round(hsl[0])}, ${Math.round(hsl[1])}%, ${Math.round(hsl[2])}%)`;
+            // 更新HEX值 - 支持透明度
+            hexValue.value = pickrColor.toHEXA().toString();
 
-            // 更新明暗变化
-            updateColorVariations(color);
+            // 更新RGB值 - 支持透明度
+            const r = Math.round(rgba[0]);
+            const g = Math.round(rgba[1]);
+            const b = Math.round(rgba[2]);
+            const a = rgba[3].toFixed(2);
+            rgbValue.value = `rgba(${r}, ${g}, ${b}, ${a})`;
+
+            // 更新HSL值 - 支持透明度
+            const h = Math.round(hsla[0]);
+            const s = Math.round(hsla[1] * 100);
+            const l = Math.round(hsla[2] * 100);
+            const hslaAlpha = hsla[3].toFixed(2);
+            hslValue.value = `hsla(${h}, ${s}%, ${l}%, ${hslaAlpha})`;
+
+            // 更新明暗变化 - 使用不透明颜色作为基础
+            updateColorVariations(`rgb(${r}, ${g}, ${b})`);
         }
 
+        // 更新明暗变化 - 使用正确的颜色计算方法
         function updateColorVariations(baseColor) {
-            function lightenColor(color, amount) {
-                const num = parseInt(color.replace("#", ""), 16);
-                const amt = Math.round(2.55 * amount * 100);
-                const R = Math.min(255, (num >> 16) + amt);
-                const G = Math.min(255, ((num >> 8) & 0x00FF) + amt);
-                const B = Math.min(255, (num & 0x0000FF) + amt);
-                return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
+            function lightenDarkenColor(col, amt) {
+                // 处理RGBA格式
+                if (col.startsWith('rgba')) {
+                    col = col.replace('rgba(', '').replace(')', '').split(',');
+                    const r = parseInt(col[0].trim());
+                    const g = parseInt(col[1].trim());
+                    const b = parseInt(col[2].trim());
+                    return `rgb(${lightenDarken(r, amt)}, ${lightenDarken(g, amt)}, ${lightenDarken(b, amt)})`;
+                }
+                // 处理RGB格式
+                else if (col.startsWith('rgb')) {
+                    col = col.replace('rgb(', '').replace(')', '').split(',');
+                    const r = parseInt(col[0].trim());
+                    const g = parseInt(col[1].trim());
+                    const b = parseInt(col[2].trim());
+                    return `rgb(${lightenDarken(r, amt)}, ${lightenDarken(g, amt)}, ${lightenDarken(b, amt)})`;
+                }
+                // 处理HEX格式
+                else if (col.startsWith('#')) {
+                    let usePound = true;
+                    if (col[0] === "#") {
+                        col = col.slice(1);
+                        usePound = true;
+                    }
+
+                    const num = parseInt(col, 16);
+                    let r = (num >> 16) + amt;
+                    if (r > 255) r = 255;
+                    else if (r < 0) r = 0;
+
+                    let b = ((num >> 8) & 0x00FF) + amt;
+                    if (b > 255) b = 255;
+                    else if (b < 0) b = 0;
+
+                    let g = (num & 0x0000FF) + amt;
+                    if (g > 255) g = 255;
+                    else if (g < 0) g = 0;
+
+                    return (usePound ? "#" : "") + (g | (b << 8) | (r << 16)).toString(16).padStart(6, '0');
+                }
+                return col;
             }
 
-            function darkenColor(color, amount) {
-                const num = parseInt(color.replace("#", ""), 16);
-                const amt = Math.round(2.55 * amount * 100);
-                const R = Math.max(0, (num >> 16) - amt);
-                const G = Math.max(0, ((num >> 8) & 0x00FF) - amt);
-                const B = Math.max(0, (num & 0x0000FF) - amt);
-                return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
+            function lightenDarken(value, amt) {
+                value += amt;
+                if (value > 255) return 255;
+                if (value < 0) return 0;
+                return value;
             }
 
             // 明度变化
             for (let i = 1; i <= 5; i++) {
-                const lightColor = lightenColor(baseColor, i * 0.15);
+                const lightColor = lightenDarkenColor(baseColor, i * 40);
                 document.getElementById(`light-${i}00`).style.backgroundColor = lightColor;
                 document.getElementById(`light-${i}00`).nextElementSibling.value = lightColor;
             }
 
             // 暗度变化
             for (let i = 1; i <= 5; i++) {
-                const darkColor = darkenColor(baseColor, i * 0.15);
+                const darkColor = lightenDarkenColor(baseColor, -i * 30);
                 document.getElementById(`dark-${i}00`).style.backgroundColor = darkColor;
                 document.getElementById(`dark-${i}00`).nextElementSibling.value = darkColor;
             }
@@ -417,7 +440,7 @@
         const singleColorPickr = Pickr.create({
             el: '#single-color-picker-container',
             theme: 'classic',
-            default: '#3b82f6',
+            default: '#000000',
             swatches: [
                 '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#6366f1',
                 '#ec4899', '#14b8a6', '#f97316', '#8b5cf6', '#d946ef'
@@ -436,24 +459,18 @@
             }
         });
 
-        // 修复：确保Pickr按钮颜色更新
-        singleColorPickr.on('change', (color, source, instance) => {
-            const hexColor = color.toHEXA().toString();
-            updateColorValues(hexColor);
-
-            // 手动更新按钮颜色
-            instance._root.button.style.color = hexColor;
-        }).on('save', (color, instance) => {
-            // 保存时也更新按钮颜色
-            const hexColor = color.toHEXA().toString();
-            instance._root.button.style.color = hexColor;
+        // 颜色选择器变化事件
+        singleColorPickr.on('change', (color) => {
+            updateColorValues(color.toHEXA().toString());
+        }).on('save', (color) => {
+            updateColorValues(color.toHEXA().toString());
         });
 
         // 初始化渐变颜色选择器
         const gradientColor1Pickr = Pickr.create({
             el: '#gradient-color-1-container',
             theme: 'classic',
-            default: '#3b82f6',
+            default: '#000000',
             components: {
                 preview: true,
                 opacity: true,
@@ -471,7 +488,7 @@
         const gradientColor2Pickr = Pickr.create({
             el: '#gradient-color-2-container',
             theme: 'classic',
-            default: '#ec4899',
+            default: '#000000',
             components: {
                 preview: true,
                 opacity: true,
@@ -484,25 +501,6 @@
                     save: true
                 }
             }
-        });
-
-        // 修复：确保渐变Pickr按钮颜色更新
-        gradientColor1Pickr.on('change', (color, source, instance) => {
-            const hexColor = color.toHEXA().toString();
-            instance._root.button.style.color = hexColor;
-            updateGradients();
-        }).on('save', (color, instance) => {
-            const hexColor = color.toHEXA().toString();
-            instance._root.button.style.color = hexColor;
-        });
-
-        gradientColor2Pickr.on('change', (color, source, instance) => {
-            const hexColor = color.toHEXA().toString();
-            instance._root.button.style.color = hexColor;
-            updateGradients();
-        }).on('save', (color, instance) => {
-            const hexColor = color.toHEXA().toString();
-            instance._root.button.style.color = hexColor;
         });
 
         // 渐变色功能
@@ -530,6 +528,9 @@
             conicGradientCode.textContent = `background: conic-gradient(${color1}, ${color2});`;
         }
 
+        // 渐变颜色变化事件
+        gradientColor1Pickr.on('change', updateGradients);
+        gradientColor2Pickr.on('change', updateGradients);
         gradientDirection.addEventListener('change', updateGradients);
 
         // 初始化渐变
@@ -567,7 +568,7 @@
         });
 
         // 初始化颜色值
-        updateColorValues('#3b82f6');
+        updateColorValues('#000000');
     });
 </script>
 </body>
